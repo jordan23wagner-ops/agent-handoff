@@ -1,0 +1,12 @@
+# Force LF line endings and prevent BOM on all text files
+* text=auto eol=lf
+
+# Ensure these critical files are always LF, no BOM
+Dockerfile text eol=lf
+*.py text eol=lf
+*.txt text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.toml text eol=lf
+*.md text eol=lf

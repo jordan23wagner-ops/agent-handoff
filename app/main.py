@@ -1,4 +1,4 @@
-﻿from fastapi import FastAPI, HTTPException, Depends, Header
+from fastapi import FastAPI, HTTPException, Depends, Header
 from pydantic import BaseModel
 from typing import Any, Dict, Optional
 from datetime import datetime
@@ -30,10 +30,10 @@ async def get_api_key(x_api_key: str = Header(...)):
 @app.post("/handoff", response_model=HandoffResponse)
 async def create_handoff(request: HandoffRequest, api_key: str = Depends(get_api_key)):
     result = await process_handoff(request)
-    
+
     total = record_usage(result["handoff_id"], request.next_agent, True)
     record_billing(result["handoff_id"])
-    
+
     return HandoffResponse(
         **result,
         total_handoffs=total
@@ -51,6 +51,3 @@ async def get_stats():
             logs = json.load(f)
         return {"total_handoffs": len(logs), "recent": logs[-5:]}
     return {"total_handoffs": 0, "recent": []}
-#   F o r c e   r e d e p l o y   0 6 / 1 9 / 2 0 2 6   1 2 : 3 5 : 0 4 
- 
- 

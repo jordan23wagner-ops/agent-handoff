@@ -1,0 +1,14 @@
+.env
+.env.example
+.git
+.gitignore
+.gitattributes
+__pycache__/
+*.pyc
+*.bak*
+Dockerfile.txt
+usage_log.json
+tests/
+test_*.py
+README.md
+.claude/
