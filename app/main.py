@@ -51,3 +51,33 @@ async def get_stats():
             logs = json.load(f)
         return {"total_handoffs": len(logs), "recent": logs[-5:]}
     return {"total_handoffs": 0, "recent": []}
+from fastapi import FastAPI, Depends, HTTPException, Request
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+import logging
+
+limiter = Limiter(key_func=get_remote_address)
+app = FastAPI()
+app.state.limiter = limiter
+
+# Basic logging
+logging.basicConfig(level=logging.INFO)
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
+    raise HTTPException(status_code=429, detail=\"Rate limit exceeded. Try again later.\")
+
+# Your existing routes here...
+# (Keep your existing /handoff, /health, /stats)
+
+@app.post("/handoff", response_model=HandoffResponse)
+@limiter.limit("10/minute")  # Example: 10 requests per minute per IP
+async def create_handoff(request: HandoffRequest, api_key: str = Depends(get_api_key)):
+    try:
+        result = await process_handoff(request)
+        # billing code...
+        return result
+    except Exception as e:
+        logging.error(f\"Handoff error: {e}\")
+        raise HTTPException(status_code=500, detail=\"Internal server error\")
