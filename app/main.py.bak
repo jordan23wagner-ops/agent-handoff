@@ -1,0 +1,54 @@
+﻿from fastapi import FastAPI, HTTPException, Depends, Header
+from pydantic import BaseModel, Field
+from typing import Any, Dict, Optional
+from datetime import datetime
+import uuid
+
+app = FastAPI(title="Agent Handoff", version="0.1.0")
+
+class HandoffRequest(BaseModel):
+    message: Any
+    next_agent: str
+    context: Optional[Dict] = None
+    metadata: Optional[Dict] = None
+
+class HandoffResponse(BaseModel):
+    success: bool
+    cleaned_message: Any
+    enriched_metadata: Dict
+    next_agent: str
+    handoff_id: str
+    timestamp: datetime
+
+async def get_api_key(x_api_key: str = Header(...)):
+    if not x_api_key:
+        raise HTTPException(status_code=401, detail="Missing API key")
+    return x_api_key
+
+@app.post("/handoff", response_model=HandoffResponse)
+async def create_handoff(request: HandoffRequest, api_key: str = Depends(get_api_key)):
+    handoff_id = str(uuid.uuid4())
+    
+    # Basic cleaning
+    cleaned = request.message
+    if isinstance(cleaned, dict):
+        cleaned = {k: v for k, v in cleaned.items() if v is not None}
+    
+    enriched = {
+        "handoff_id": handoff_id,
+        "processed_at": datetime.utcnow().isoformat(),
+        "next_agent": request.next_agent
+    }
+    
+    return HandoffResponse(
+        success=True,
+        cleaned_message=cleaned,
+        enriched_metadata=enriched,
+        next_agent=request.next_agent,
+        handoff_id=handoff_id,
+        timestamp=datetime.utcnow()
+    )
+
+@app.get("/health")
+async def health():
+    return {"status": "ok"}

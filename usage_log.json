@@ -1,0 +1,14 @@
+[
+  {
+    "timestamp": "2026-06-19T04:54:53.333424",
+    "handoff_id": "b852b06e-c1db-44b3-9c47-0223b13e3eea",
+    "next_agent": "tester",
+    "success": true
+  },
+  {
+    "timestamp": "2026-06-19T05:31:19.837867",
+    "handoff_id": "5c116017-c12c-4d50-9bf7-b6313e00bd6a",
+    "next_agent": "final_tester",
+    "success": true
+  }
+]
