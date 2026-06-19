@@ -1,4 +1,4 @@
-﻿import json
+import json
 import os
 from datetime import datetime
 
@@ -11,17 +11,16 @@ def record_usage(handoff_id: str, next_agent: str, success: bool):
         "next_agent": next_agent,
         "success": success
     }
-    
-    # Load existing log or create new
+
     if os.path.exists(USAGE_LOG):
         with open(USAGE_LOG, "r") as f:
             logs = json.load(f)
     else:
         logs = []
-    
+
     logs.append(usage)
-    
+
     with open(USAGE_LOG, "w") as f:
         json.dump(logs, f, indent=2)
-    
-    return len(logs)  # return total count
+
+    return len(logs)

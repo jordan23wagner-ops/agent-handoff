@@ -1,6 +1,5 @@
-﻿fastapi
+fastapi
 uvicorn[standard]
 pydantic>=2.0
 httpx
-
-stripe
+stripe>=5.5.0

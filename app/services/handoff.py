@@ -1,11 +1,9 @@
-﻿import uuid
+import uuid
 from datetime import datetime
 from typing import Any, Dict
 
 def clean_message(message: Any) -> Any:
-    """Improved cleaning"""
     if isinstance(message, dict):
-        # Remove None values and clean strings
         cleaned = {}
         for k, v in message.items():
             if v is not None:
@@ -18,7 +16,6 @@ def clean_message(message: Any) -> Any:
     return message
 
 def enrich_metadata(message: Any, next_agent: str, handoff_id: str) -> Dict:
-    """Add useful metadata"""
     return {
         "handoff_id": handoff_id,
         "processed_at": datetime.utcnow().isoformat(),
@@ -29,17 +26,14 @@ def enrich_metadata(message: Any, next_agent: str, handoff_id: str) -> Dict:
 
 async def process_handoff(request) -> Dict:
     handoff_id = str(uuid.uuid4())
-    
-    # Clean
+
     cleaned_message = clean_message(request.message)
-    
-    # Basic validation
+
     if not cleaned_message:
         raise ValueError("Message is empty after cleaning")
-    
-    # Enrich
+
     enriched = enrich_metadata(cleaned_message, request.next_agent, handoff_id)
-    
+
     return {
         "success": True,
         "cleaned_message": cleaned_message,

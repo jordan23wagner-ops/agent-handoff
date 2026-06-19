@@ -1,4 +1,4 @@
-﻿import httpx
+import httpx
 from typing import Any, Optional, Dict
 
 class AgentHandoff:
@@ -21,7 +21,6 @@ class AgentHandoff:
         response.raise_for_status()
         return response.json()
 
-# Easy function
 def handoff(message, next_agent, api_key, base_url="http://127.0.0.1:8000"):
     client = AgentHandoff(api_key, base_url)
     return client.normalize_and_route(message, next_agent)
