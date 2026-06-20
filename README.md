@@ -29,3 +29,13 @@ Free tier available for testing (limited handoffs).
 
 **Subscription Tier** (coming soon): Higher limits + priority support
 
+
+## Pricing
+
+**Usage-based**: .001 per handoff (pay as you go)
+
+**Pro Subscription**: /month
+- Unlimited handoffs
+- Higher rate limits
+- Priority support
+
