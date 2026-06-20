@@ -39,3 +39,8 @@ Free tier available for testing (limited handoffs).
 - Higher rate limits
 - Priority support
 
+
+## Pro Tier
+
+Use header x-pro-key: pro-secret-123 for unlimited handoffs and higher limits.
+
