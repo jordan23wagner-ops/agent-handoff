@@ -80,4 +80,13 @@ async def create_handoff(request: HandoffRequest, api_key: str = Depends(get_api
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000)@app.post("/handoff", response_model=HandoffResponse)
+@limiter.limit("30/minute")
+async def create_handoff(request: Request, handoff_request: HandoffRequest, api_key: str = Depends(get_api_key)):
+    try:
+        result = await process_handoff(handoff_request)
+        # Add billing logic here
+        return result
+    except Exception as e:
+        logging.error(f\"Handoff error: {e}\")
+        raise HTTPException(status_code=500, detail=\"Internal server error\")
