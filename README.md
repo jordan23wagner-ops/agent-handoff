@@ -9,3 +9,12 @@ result = handoff(
     next_agent="next_agent_name",
     api_key="your-key"
 )
+
+## Pricing
+
+- **.001 per handoff** (1 cent per 10 handoffs)
+- High-volume friendly
+- Billed via Stripe usage-based metering
+
+Free tier available for testing (limited handoffs).
+
