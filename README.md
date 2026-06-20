@@ -1,46 +1,48 @@
-﻿# Agent Handoff
+# Agent Handoff Middleware
 
-pip install -e .
+Serverless middleware for AI agent handoffs with built-in Stripe metered billing. Clean, enrich, and route messages between AI agents in one API call.
 
-from agent_handoff import handoff
+## Live API
 
-result = handoff(
-    message=your_agent_output,
-    next_agent="next_agent_name",
-    api_key="your-key"
-)
+```bash
+https://agent-handoff-production-573c.up.railway.app
+```bash
+
+## Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| /handoff | POST | Process and route a message to the next agent |
+| /health | GET | Service health check |
+| /stats | GET | Usage statistics (requires API key) |
+
+## Quick Start
+
+```bash
+curl -X POST https://agent-handoff-production-573c.up.railway.app/handoff -H 'x-api-key: your-key' -H 'Content-Type: application/json' -d '{"message": {"task": "Summarize this"}, "next_agent": "summarizer"}'
+```bash
+
+## PowerShell Module
+
+```powershell
+Install-Module AgentHandoff
+$env:HANDOFF_API_KEY = 'your-key'
+$result = Invoke-AgentHandoff -Message @{ task = 'Summarize this' } -NextAgent 'summarizer' -VerboseOutput
+```powershell
 
 ## Pricing
 
-- **.001 per handoff** (1 cent per 10 handoffs)
-- High-volume friendly
-- Billed via Stripe usage-based metering
+- Pay-per-use: $0.001 per handoff via Stripe
+- Pro tier: $29/month for unlimited handoffs
 
-Free tier available for testing (limited handoffs).
+## Tech Stack
 
+- FastAPI + Python
+- Railway deployment
+- Stripe metered billing
+- Slowapi rate limiting
 
-## Pricing
+## Links
 
-**Usage-based**: .001 per handoff
-
-- High-volume friendly
-- Billed via Stripe
-- 1 cent per 10 handoffs
-
-**Subscription Tier** (coming soon): Higher limits + priority support
-
-
-## Pricing
-
-**Usage-based**: .001 per handoff (pay as you go)
-
-**Pro Subscription**: /month
-- Unlimited handoffs
-- Higher rate limits
-- Priority support
-
-
-## Pro Tier
-
-Use header x-pro-key: pro-secret-123 for unlimited handoffs and higher limits.
-
+- [PowerShell Gallery](https://www.powershellgallery.com/packages/AgentHandoff)
+- [Live API](https://agent-handoff-production-573c.up.railway.app/health)
