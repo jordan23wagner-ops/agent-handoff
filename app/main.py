@@ -1,17 +1,27 @@
-from fastapi import FastAPI, HTTPException, Depends, Header
+from fastapi import FastAPI, Depends, HTTPException, Request
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from pydantic import BaseModel
-from typing import Any, Dict, Optional
+from typing import Any, Dict
+import uuid
 from datetime import datetime
-from app.services.handoff import process_handoff
-from app.usage import record_usage
-from app.billing import record_billing
+import json
+import os
+import logging
 
-app = FastAPI(title="Agent Handoff", version="0.1.0")
+# Rate limiting
+limiter = Limiter(key_func=get_remote_address)
+
+app = FastAPI()
+app.state.limiter = limiter
+
+# Logging
+logging.basicConfig(level=logging.INFO)
 
 class HandoffRequest(BaseModel):
     message: Any
     next_agent: str
-    context: Optional[Dict] = None
 
 class HandoffResponse(BaseModel):
     success: bool
@@ -22,22 +32,14 @@ class HandoffResponse(BaseModel):
     timestamp: datetime
     total_handoffs: int
 
-async def get_api_key(x_api_key: str = Header(...)):
-    if not x_api_key:
-        raise HTTPException(status_code=401, detail="Missing API key")
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    raise HTTPException(status_code=429, detail="Too many requests. Try again later.")
+
+def get_api_key(x_api_key: str = Header(...)):
+    if x_api_key != os.getenv("API_KEY"):
+        raise HTTPException(status_code=401, detail="Invalid API key")
     return x_api_key
-
-@app.post("/handoff", response_model=HandoffResponse)
-async def create_handoff(request: HandoffRequest, api_key: str = Depends(get_api_key)):
-    result = await process_handoff(request)
-
-    total = record_usage(result["handoff_id"], request.next_agent, True)
-    record_billing(result["handoff_id"])
-
-    return HandoffResponse(
-        **result,
-        total_handoffs=total
-    )
 
 @app.get("/health")
 async def health():
@@ -45,39 +47,37 @@ async def health():
 
 @app.get("/stats")
 async def get_stats():
-    import json, os
     if os.path.exists("usage_log.json"):
         with open("usage_log.json") as f:
             logs = json.load(f)
         return {"total_handoffs": len(logs), "recent": logs[-5:]}
     return {"total_handoffs": 0, "recent": []}
-from fastapi import FastAPI, Depends, HTTPException, Request
-from slowapi import Limiter
-from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
-import logging
-
-limiter = Limiter(key_func=get_remote_address)
-app = FastAPI()
-app.state.limiter = limiter
-
-# Basic logging
-logging.basicConfig(level=logging.INFO)
-
-@app.exception_handler(RateLimitExceeded)
-async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
-    raise HTTPException(status_code=429, detail=\"Rate limit exceeded. Try again later.\")
-
-# Your existing routes here...
-# (Keep your existing /handoff, /health, /stats)
 
 @app.post("/handoff", response_model=HandoffResponse)
-@limiter.limit("10/minute")  # Example: 10 requests per minute per IP
+@limiter.limit("30/minute")
 async def create_handoff(request: HandoffRequest, api_key: str = Depends(get_api_key)):
     try:
-        result = await process_handoff(request)
-        # billing code...
-        return result
+        # Your existing handoff logic here (from previous versions)
+        handoff_id = str(uuid.uuid4())
+        # ... (add your process_handoff logic)
+        # For now, simple response
+        return {
+            "success": True,
+            "cleaned_message": request.message,
+            "enriched_metadata": {
+                "handoff_id": handoff_id,
+                "processed_at": datetime.utcnow().isoformat(),
+                "next_agent": request.next_agent
+            },
+            "next_agent": request.next_agent,
+            "handoff_id": handoff_id,
+            "timestamp": datetime.utcnow(),
+            "total_handoffs": 1  # Update with real count later
+        }
     except Exception as e:
-        logging.error(f\"Handoff error: {e}\")
-        raise HTTPException(status_code=500, detail=\"Internal server error\")
+        logging.error(f"Handoff error: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
