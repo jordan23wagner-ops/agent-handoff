@@ -90,3 +90,13 @@ async def create_handoff(request: Request, handoff_request: HandoffRequest, api_
     except Exception as e:
         logging.error(f\"Handoff error: {e}\")
         raise HTTPException(status_code=500, detail=\"Internal server error\")
+@app.post("/handoff", response_model=HandoffResponse)
+@limiter.limit("30/minute")
+async def create_handoff(request: Request, handoff_request: HandoffRequest, api_key: str = Depends(get_api_key)):
+    try:
+        result = await process_handoff(handoff_request)
+        # billing logic here
+        return result
+    except Exception as e:
+        logging.error(f'Handoff error: {e}')
+        raise HTTPException(status_code=500, detail='Internal server error')
