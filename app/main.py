@@ -55,39 +55,8 @@ async def get_stats():
 @app.post("/handoff", response_model=HandoffResponse)
 @limiter.limit("30/minute")
 async def create_handoff(request: Request, handoff_request: HandoffRequest, api_key: str = Depends(get_api_key)):
-    try:
-        handoff_id = str(uuid.uuid4())
-        # Simple response for now - replace with your full logic
-        return {
-            "success": True,
-            "cleaned_message": handoff_request.message,
-            "enriched_metadata": {
-                "handoff_id": handoff_id,
-                "processed_at": datetime.utcnow().isoformat(),
-                "next_agent": handoff_request.next_agent
-            },
-            "next_agent": handoff_request.next_agent,
-            "handoff_id": handoff_id,
-            "timestamp": datetime.utcnow(),
-            "total_handoffs": 1
-        }
-    except Exception as e:
-        logging.error(f"Handoff error: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)# Simple Pro check (expand later with Stripe subscription verification)
-is_pro = request.headers.get('x-pro-key') == 'pro-secret-123'
-
-if is_pro:
-    # Higher limits for Pro users
-    pass  # Add higher rate limit or features here
-@app.post("/handoff", response_model=HandoffResponse)
-@limiter.limit("30/minute")
-async def create_handoff(request: Request, handoff_request: HandoffRequest, api_key: str = Depends(get_api_key)):
     is_pro = request.headers.get('x-pro-key') == 'pro-secret-123'
-    
+
     try:
         handoff_id = str(uuid.uuid4())
         return {
@@ -107,3 +76,7 @@ async def create_handoff(request: Request, handoff_request: HandoffRequest, api_
     except Exception as e:
         logging.error(f"Handoff error: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
