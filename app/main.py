@@ -88,7 +88,7 @@ async def create_handoff(request: Request, handoff_request: HandoffRequest, api_
         # Add billing logic here
         return result
     except Exception as e:
-        logging.error(f"Handoff error: {e}")
+        logging.error(f'Handoff error: {e}')
         raise HTTPException(status_code=500, detail=\"Internal server error\")
 @app.post("/handoff", response_model=HandoffResponse)
 @limiter.limit("30/minute")
