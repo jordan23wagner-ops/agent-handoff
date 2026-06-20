@@ -18,3 +18,14 @@ result = handoff(
 
 Free tier available for testing (limited handoffs).
 
+
+## Pricing
+
+**Usage-based**: .001 per handoff
+
+- High-volume friendly
+- Billed via Stripe
+- 1 cent per 10 handoffs
+
+**Subscription Tier** (coming soon): Higher limits + priority support
+
