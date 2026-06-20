@@ -12,7 +12,6 @@ import logging
 
 # Rate limiting
 limiter = Limiter(key_func=get_remote_address)
-
 app = FastAPI()
 app.state.limiter = limiter
 
@@ -55,24 +54,22 @@ async def get_stats():
 
 @app.post("/handoff", response_model=HandoffResponse)
 @limiter.limit("30/minute")
-async def create_handoff(request: HandoffRequest, api_key: str = Depends(get_api_key)):
+async def create_handoff(request: Request, handoff_request: HandoffRequest, api_key: str = Depends(get_api_key)):
     try:
-        # Your existing handoff logic here (from previous versions)
         handoff_id = str(uuid.uuid4())
-        # ... (add your process_handoff logic)
-        # For now, simple response
+        # Simple response for now - replace with your full logic
         return {
             "success": True,
-            "cleaned_message": request.message,
+            "cleaned_message": handoff_request.message,
             "enriched_metadata": {
                 "handoff_id": handoff_id,
                 "processed_at": datetime.utcnow().isoformat(),
-                "next_agent": request.next_agent
+                "next_agent": handoff_request.next_agent
             },
-            "next_agent": request.next_agent,
+            "next_agent": handoff_request.next_agent,
             "handoff_id": handoff_id,
             "timestamp": datetime.utcnow(),
-            "total_handoffs": 1  # Update with real count later
+            "total_handoffs": 1
         }
     except Exception as e:
         logging.error(f"Handoff error: {e}")
@@ -80,23 +77,4 @@ async def create_handoff(request: HandoffRequest, api_key: str = Depends(get_api
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)@app.post("/handoff", response_model=HandoffResponse)
-@limiter.limit("30/minute")
-async def create_handoff(request: Request, handoff_request: HandoffRequest, api_key: str = Depends(get_api_key)):
-    try:
-        result = await process_handoff(handoff_request)
-        # Add billing logic here
-        return result
-    except Exception as e:
-        logging.error(f'Handoff error: {e}')
-        raise HTTPException(status_code=500, detail=\"Internal server error\")
-@app.post("/handoff", response_model=HandoffResponse)
-@limiter.limit("30/minute")
-async def create_handoff(request: Request, handoff_request: HandoffRequest, api_key: str = Depends(get_api_key)):
-    try:
-        result = await process_handoff(handoff_request)
-        # billing logic here
-        return result
-    except Exception as e:
-        logging.error(f'Handoff error: {e}')
-        raise HTTPException(status_code=500, detail='Internal server error')
+    uvicorn.run(app, host="0.0.0.0", port=8000)
