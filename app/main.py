@@ -24,6 +24,33 @@ app = FastAPI()
 app.state.limiter = limiter
 logging.basicConfig(level=logging.INFO)
 
+# ---------------------------------------------------------------------------
+# Optional billing/usage wiring — these must NEVER break a handoff.
+# Resolves whether run as `app.main` (repo root) or from inside app/.
+# Falls back to no-ops if a module (or its deps, e.g. stripe) is unavailable.
+# ---------------------------------------------------------------------------
+try:
+    try:
+        from app.usage import record_usage
+    except ImportError:
+        from usage import record_usage
+except Exception as _e:  # pragma: no cover
+    logging.warning(f"usage module unavailable, disabling usage logging: {_e}")
+
+    def record_usage(handoff_id, next_agent, success):
+        return None
+
+try:
+    try:
+        from app.billing import record_billing
+    except ImportError:
+        from billing import record_billing
+except Exception as _e:  # pragma: no cover
+    logging.warning(f"billing module unavailable, disabling billing: {_e}")
+
+    def record_billing(handoff_id):
+        return False
+
 
 # ---------------------------------------------------------------------------
 # Models + validation
@@ -72,7 +99,6 @@ def _safe_eq(a: Any, b: Any) -> bool:
 
 
 def require_api_key(x_api_key: str = Header(...)) -> str:
-    # Fails closed: if API_KEY is unset on the server, every request is rejected.
     if not _safe_eq(x_api_key, API_KEY):
         raise HTTPException(status_code=401, detail="Invalid API key")
     return x_api_key
@@ -123,6 +149,26 @@ async def create_handoff(
     try:
         handoff_id = str(uuid.uuid4())
         cleaned = _clean(handoff_request.message)
+
+        # Record usage for every handoff (analytics + running count).
+        # Failure here must never break the handoff.
+        total_handoffs = 1
+        try:
+            count = record_usage(handoff_id, handoff_request.next_agent, True)
+            if isinstance(count, int):
+                total_handoffs = count
+        except Exception as e:
+            logging.warning(f"usage logging failed (non-fatal): {e}")
+
+        # Meter billing ONLY for non-pro callers (pro = flat monthly, unlimited).
+        # record_billing stays in demo mode (logs, no charge) until both
+        # STRIPE_SECRET_KEY and STRIPE_CUSTOMER_ID are set in the environment.
+        if not is_pro:
+            try:
+                record_billing(handoff_id)
+            except Exception as e:
+                logging.warning(f"billing failed (non-fatal): {e}")
+
         return {
             "success": True,
             "cleaned_message": cleaned,
@@ -133,12 +179,15 @@ async def create_handoff(
                 "original_type": type(handoff_request.message).__name__,
                 "estimated_tokens": len(str(cleaned)) // 4,
                 "is_pro": is_pro,
+                "billable": not is_pro,
             },
             "next_agent": handoff_request.next_agent,
             "handoff_id": handoff_id,
             "timestamp": datetime.now(timezone.utc),
-            "total_handoffs": 1,
+            "total_handoffs": total_handoffs,
         }
+    except HTTPException:
+        raise
     except Exception as e:
         logging.error(f"Handoff error: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
