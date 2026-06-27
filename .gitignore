@@ -35,3 +35,9 @@ venv/
 # OS
 .DS_Store
 Thumbs.db
+usage_log.json
+*.bak
+*.bak2
+*.bak3
+*.bak4
+Dockerfile.txt
