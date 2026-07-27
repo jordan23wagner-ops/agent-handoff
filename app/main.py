@@ -47,7 +47,7 @@ except Exception as _e:  # pragma: no cover
     logging.warning(f"billing module unavailable, disabling billing: {_e}")
 
     def record_billing(handoff_id, customer_id=None):
-        return False
+        return {"billed": False, "status": "module_unavailable", "error": str(_e)}
 
 
 # ---------------------------------------------------------------------------
@@ -185,11 +185,31 @@ async def create_handoff(
         except Exception as e:
             logging.warning(f"usage logging failed (non-fatal): {e}")
 
+        billing_result = {"billed": False, "status": "not_billable", "error": None}
         if not is_pro:
             try:
-                record_billing(handoff_id, customer_id or None)
+                billing_result = record_billing(handoff_id, customer_id or None)
+                if not isinstance(billing_result, dict):
+                    # Backward-compat guard in case an older billing module
+                    # returns a bare bool -- never trust that shape blindly.
+                    billing_result = {
+                        "billed": bool(billing_result),
+                        "status": "billed" if billing_result else "failed",
+                        "error": None,
+                    }
             except Exception as e:
-                logging.warning(f"billing failed (non-fatal): {e}")
+                # record_billing() already catches its own errors; landing
+                # here means something broke outside that contract. Same
+                # rule applies: never fail the customer's handoff for it,
+                # but never let it go unlogged either.
+                logging.error(f"[BILLING] record_billing() raised unexpectedly: {e}")
+                billing_result = {"billed": False, "status": "failed", "error": str(e)}
+
+            if billing_result["status"] == "failed":
+                logging.error(
+                    f"[BILLING] Handoff {handoff_id} served but NOT billed "
+                    f"(customer={customer_id}): {billing_result['error']}"
+                )
 
         return {
             "success": True,
@@ -203,6 +223,7 @@ async def create_handoff(
                 "is_pro": is_pro,
                 "billable": not is_pro,
                 "customer_mapped": bool(customer_id),
+                "billing_status": billing_result["status"],
             },
             "next_agent": handoff_request.next_agent,
             "handoff_id": handoff_id,
