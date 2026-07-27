@@ -75,6 +75,24 @@ logging.info(f"Loaded {len(KEY_MAP)} API key(s).")
 
 
 # ---------------------------------------------------------------------------
+# MCP (Model Context Protocol) endpoint at POST /mcp.
+# This is what AI agents call once this server is listed in the official MCP
+# registry. It lives in its own module and runs the same auth -> usage ->
+# billing sequence as /handoff, so it can't become an unmetered bypass.
+# The import is defensive: an MCP problem must never stop the REST API booting.
+# ---------------------------------------------------------------------------
+try:
+    try:
+        from app.mcp import router as mcp_router
+    except ImportError:
+        from mcp import router as mcp_router
+    app.include_router(mcp_router)
+    logging.info("[MCP] /mcp endpoint registered.")
+except Exception as _mcp_err:  # pragma: no cover
+    logging.warning(f"[MCP] router unavailable, /mcp disabled: {_mcp_err}")
+
+
+# ---------------------------------------------------------------------------
 # Models + validation
 # ---------------------------------------------------------------------------
 class HandoffRequest(BaseModel):
