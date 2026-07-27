@@ -1,0 +1,26 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.jordan23wagner-ops/agent-handoff",
+  "title": "Agent Handoff",
+  "description": "Pass messages between AI agents with cleaning, metadata enrichment, and metered billing.",
+  "version": "1.0.0",
+  "websiteUrl": "https://agent-handoff-production-573c.up.railway.app",
+  "repository": {
+    "url": "https://github.com/jordan23wagner-ops/agent-handoff",
+    "source": "github"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://agent-handoff-production-573c.up.railway.app/mcp",
+      "headers": [
+        {
+          "name": "x-api-key",
+          "description": "agent-handoff API key. Required on every tools/call request.",
+          "isRequired": true,
+          "isSecret": true
+        }
+      ]
+    }
+  ]
+}
