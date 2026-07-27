@@ -15,6 +15,7 @@ https://agent-handoff-production-573c.up.railway.app
 | /handoff | POST | Process and route a message to the next agent |
 | /health | GET | Service health check |
 | /stats | GET | Usage statistics (requires API key) |
+| /mcp | POST | Model Context Protocol server (`handoff` + `get_usage_stats` tools) — same auth/billing path as REST |
 
 ## Quick Start
 
@@ -46,3 +47,8 @@ $result = Invoke-AgentHandoff -Message @{ task = 'Summarize this' } -NextAgent '
 
 - [PowerShell Gallery](https://www.powershellgallery.com/packages/AgentHandoff)
 - [Live API](https://agent-handoff-production-573c.up.railway.app/health)
+
+## Recent changes (2026-07-27)
+
+- **MCP server added** at `POST /mcp` — exposes `handoff` and `get_usage_stats` as MCP tools over JSON-RPC 2.0, discoverable via `tools/list`. Runs through the exact same auth → usage → billing path as the REST `/handoff` endpoint, so it can't become an unmetered bypass. `server.json` added for the official MCP registry (schema-validated); publishing via `mcp-publisher` is still pending.
+- **Durable billing-failure audit trail** — failures now persist to Supabase (`public.billing_failures`) instead of only an ephemeral local file that reset on every redeploy.
